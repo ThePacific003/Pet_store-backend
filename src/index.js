@@ -5,8 +5,10 @@ import authRoutes from './routes/auth.routes.js'
 import cookieparser from 'cookie-parser'
 import Pet from './Models/pet.model.js';
 import petRoutes from "./routes/pet.routes.js"
-
-
+import accessoryRoutes from "./routes/accessory.routes.js"
+import orderRoutes from "./routes/order.routes.js"
+import adoptionRoutes from "./routes/adoption.routes.js"
+import breedProfileRoutes from "./routes/breedProfile.routes.js"
 dotenv.config()
 
 const port = process.env.PORT
@@ -16,9 +18,13 @@ const app = express();
 app.use(express.json())
 app.use(cookieparser())
 
+
+app.use("/api/accessory/",accessoryRoutes)
 app.use("/api/pet/",petRoutes)
 app.use("/api/auth/", authRoutes)
-
+app.use("/api/order/",orderRoutes)
+app.use("/api/adoption/",adoptionRoutes)
+app.use("/api/breedprofile/",breedProfileRoutes)
 
 app.listen(port, (req, res) => {
     console.log(`Server listening on port ${port}`);

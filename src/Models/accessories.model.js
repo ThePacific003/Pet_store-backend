@@ -25,6 +25,10 @@ const accessorySchema= mongoose.Schema(
         inStock:{
             type:Boolean,
             required:true
+        },
+        quantityInStock:{
+            type:Number,
+            default:0
         }
     },
     {

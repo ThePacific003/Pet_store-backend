@@ -1,7 +1,8 @@
 import express from 'express'
-import { createPet, getAllPets, updatePet } from '../controllers/pet.controller.js'
+import { createPet, deletePet, filterPets, getAllPets, getPetsByCategory, restockPet, toggleAvailability, updatePet } from '../controllers/pet.controller.js'
 import { protectRoute } from '../middlewares/auth.middleware.js'
 import authorizeRoles from '../middlewares/authorize.roles.middleware.js';
+import { searchAccessories } from '../controllers/accessory.controller.js';
 
 const router=express.Router()
 
@@ -11,4 +12,13 @@ router.post("/",protectRoute,getAllPets)
 
 router.put("/:id",protectRoute,authorizeRoles("admin","petProvider"),updatePet)
 
+router.get("/category/:category",getPetsByCategory)
+
+router.delete("/:id",protectRoute,authorizeRoles("admin","petProvider"),deletePet);
+
+router.get("/filterpets",filterPets);
+
+router.put("/:id/toggleavailability",protectRoute,authorizeRoles("admin","petProvider"),toggleAvailability)
+
+router.post("/:id/restock",protectRoute,authorizeRoles("admin","petProvider"),restockPet)
 export default router

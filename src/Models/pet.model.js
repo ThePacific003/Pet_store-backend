@@ -28,7 +28,8 @@ const petSchema = mongoose.Schema(
         },
         availability: {
             type: Boolean,
-            required: true
+            required: true,
+            default:true
         },
         category: {
             type: String,
@@ -53,6 +54,10 @@ const petSchema = mongoose.Schema(
             enum: ['adoption', 'sale'],
             required: true
         },
+        quantityInStock:{
+            type:Number,
+            default:1
+        }
     },
     {
         timestamps: true

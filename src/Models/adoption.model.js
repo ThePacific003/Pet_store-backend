@@ -2,27 +2,59 @@ import mongoose from "mongoose"
 
 const adoptionSchema=mongoose.Schema({
     pet:{
+        id:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'Pet',
         required:true
     },
-    applicant:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'User',
-        required:true
-    },
-    status:{
+    breed:{
         type:String,
-        enum:['pending','approved','rejected'],
+        required:true,
+    }
+},
+     provider: {
+      id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      name: {
+        type: String,
+        required: true,
+      }
+    },
+    adopter: {
+      id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      name: {
+        type: String,
+        required: true,
+      }
+    },
+    adoptionStatus:{
+        type:String,
+        enum:['pending','approved','rejected','delivered'],
         default:'pending',
     },
     message:{
-        type:String
+        type:String,
+        default:"",
+    },
+    createdAt:{
+        type:Date,
+        default:Date.now,
     }
 },
 {
     timestamp:true
 }
 );
-const Adopt=mongoose.model("Adopt",adoptionSchema)
-export default Adopt
+const Adoption=mongoose.model("Adoption",adoptionSchema)
+export default Adoption
+
+
+
+    

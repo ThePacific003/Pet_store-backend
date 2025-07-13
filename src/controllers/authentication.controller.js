@@ -56,7 +56,7 @@ export const login = async (req, res) => {
         if (!email || !password) return res.status(400).json({ message: "All field are required" })
         const user = await User.findOne({ email })
         if (!user)
-            return res.status(400).json({ message: "user doesnot exist, Create an account first" })
+            return res.status(400).json({ message: "user does not exist, Create an account first" })
         if (email !== user.email) {
             return res.status(400).json({ message: "Invalid credentials" })
         }

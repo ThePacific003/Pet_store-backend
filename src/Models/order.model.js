@@ -1,43 +1,82 @@
-import mongoose from "mongoose"
+
+
+import mongoose  from "mongoose";
+
+const orderItemSchema=mongoose.Schema({
+    itemType:{
+        type:String,
+        enum:["Pet","Accessory"],
+        required:true,
+    },
+    item:{
+        type:mongoose.Schema.Types.ObjectId,
+        required:true,
+        refPath:"orderItems.itemType",
+    },
+    quantity:{
+        type:Number,
+        default:1,
+        min:1,
+    },
+    price: {
+        type:Number,
+        required:true,
+    }
+},
+{
+    _id:false
+}
+);
 
 const orderSchema=mongoose.Schema(
     {
-        user:{
-            type:mongoose.Schema.Types.ObjectId,
-            ref:'User',
-            required:true
+        customer:{
+            type:mongoose.Schema.ObjectId,
+            ref:"User",
+            required:true,
         },
-        items:[
-            {
-                productId:mongoose.Schema.Types.ObjectId,
-                productType:{
-                    type:String,
-                    enum:['pet','accessory'],
-                    required:true
-                },
-                quantity:{
-                    type:Number,
-                    default:1
-                }
-            }
-        ],
+        orderItems:[orderItemSchema],
+        
         totalAmount:{
-            type:Number
+            type:Number,
+            required:true,
+        },
+
+        shippingAddress:{
+            country:{
+                type:String,
+                required:true,
+            },
+            city:{
+                type:String,
+                required:true,
+            },
+            postalCode:{
+                type:String,
+                required:true,
+            }
         },
         paymentMethod:{
             type:String,
-            enum:['esewa','khalti','CashOnDelivery']
+            enum:['esewa','khalti','CashOnDelivery'],
+            default:'CashOnDelivery'
         },
-        status:{
+        paymentStatus:{
             type:String,
-            enum:['pending','confirmed','shipped','delivered'],
-            default:'pending'
-        }
-       
+            enum:["Pending","Paid","Failed"],
+            default:"Pending"
+        },
+        orderStatus:{
+            type:String,
+            enum:["processing","verified","pending","shipped","delivered","cancelled"],
+            default:"Processing",
+        },
+
     },
     {
-        timestamps:true
+        timestamps:true,
     }
 );
-const Order=mongoose.model("Order", orderSchema)
+
+const Order=mongoose.model("Order",orderSchema)
 export default Order
