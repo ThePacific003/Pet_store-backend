@@ -24,7 +24,8 @@ const accessorySchema= mongoose.Schema(
         },
         inStock:{
             type:Boolean,
-            required:true
+            required:true,
+            default: false
         },
         quantityInStock:{
             type:Number,

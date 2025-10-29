@@ -31,12 +31,16 @@ export const createPet = async (req, res) => {
             availability,
             category,
             listingType,
+            quantityInStock:1,
             listed_by: {
                 id: user._id,
                 role: user.role
             }
 
         })
+        if(pet.quantityInStock<=0){
+            pet.availability=false;
+        }
         const savedPet = await pet.save();
         return res.status(200).json(savedPet);
 
@@ -186,7 +190,8 @@ export const deletePet = async (req, res) => {
     }
 
     // Admin can delete any pet
-    await Pet.findByIdAndDelete(id);
+   await Pet.findByIdAndDelete(id);
+
     res.status(200).json({ message: "Pet deleted successfully" });
 
   } catch (error) {
@@ -293,7 +298,7 @@ export const restockPet=async(req,res)=>{
 
         const pet=await Pet.findById(id)
         if(!pet){
-            res.status(400).json({message:"pet not found"})
+            return res.status(400).json({message:"pet not found"})
         }
 
         const userRole=req.user.role
@@ -312,11 +317,11 @@ export const restockPet=async(req,res)=>{
         pet.availability=pet.quantityInStock>0;
 
         const updatedPet=await pet.save();
-
-        res.status(200).json(updatedPet);
+        
+        return res.status(200).json(updatedPet);
     }
     catch(error){
         console.error("error restocking pet:",error.message)
-        res.status(500).json({message:"Server error while restocking pet"})
+        return res.status(500).json({message:"Server error while restocking pet"})
     }
 }

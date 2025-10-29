@@ -53,7 +53,7 @@ const breedProfileSchema=new mongoose.Schema({
     },
     waterType:{
     type:String,
-        enum:["freshwater","saltwater"]
+        enum:["freshwater","saltwater",""]
     }
 },
 {

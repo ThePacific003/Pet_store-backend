@@ -10,15 +10,15 @@ router.post("/create",protectRoute,authorizeRoles("admin","petProvider"),createP
 
 router.post("/",protectRoute,getAllPets)
 
-router.put("/:id",protectRoute,authorizeRoles("admin","petProvider"),updatePet)
+router.put("/update/:id",protectRoute,authorizeRoles("admin","petProvider"),updatePet)
 
 router.get("/category/:category",getPetsByCategory)
 
-router.delete("/:id",protectRoute,authorizeRoles("admin","petProvider"),deletePet);
+router.delete("/delete/:id",protectRoute,authorizeRoles("admin","petProvider"),deletePet);
 
 router.get("/filterpets",filterPets);
 
 router.put("/:id/toggleavailability",protectRoute,authorizeRoles("admin","petProvider"),toggleAvailability)
 
-router.post("/:id/restock",protectRoute,authorizeRoles("admin","petProvider"),restockPet)
+router.post("/restock/:id",protectRoute,authorizeRoles("admin","petProvider"),restockPet)
 export default router

@@ -9,11 +9,11 @@ router.post("/createaccessory",protectRoute,authorizeRoles('admin'),createAccess
 
 router.get("/",getAllAccessories);
 
-router.patch("/:id/update",protectRoute,authorizeRoles('admin'),updateAccessory)
+router.put("/update/:id",protectRoute,authorizeRoles('admin'),updateAccessory)
 
-router.post("/:id/restock",protectRoute,authorizeRoles("admin"),restockAccessory)
+router.post("/restock/:id",protectRoute,authorizeRoles("admin"),restockAccessory)
 
-router.delete("/:id/delete",protectRoute,authorizeRoles("admin"),deleteAccessory)
+router.delete("/delete/:id",protectRoute,authorizeRoles("admin"),deleteAccessory)
 
 router.get("/:search",searchAccessories)
 

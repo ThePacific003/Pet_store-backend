@@ -1,7 +1,7 @@
 import express from 'express'
 import authorizeRoles from '../middlewares/authorize.roles.middleware.js'
 import { protectRoute } from '../middlewares/auth.middleware.js'
-import { createSingleBreedProfile, deleteBreedProfile, recommendBreed, updateBreedProfile } from '../controllers/breedProfile.controller.js'
+import { createSingleBreedProfile, deleteBreedProfile, getAllBreedProfiles, recommendBreed, updateBreedProfile } from '../controllers/breedProfile.controller.js'
 
 const router=express.Router()
 
@@ -11,7 +11,9 @@ router.post("/updatebreed/:id",protectRoute,authorizeRoles("admin"),updateBreedP
 
 router.delete("/deletebreed/:id",protectRoute,authorizeRoles("admin"),deleteBreedProfile)
 
-router.get("/recommendation",protectRoute,authorizeRoles("customer"),recommendBreed)
+router.post("/recommendation",protectRoute,authorizeRoles("customer"),recommendBreed)
+
+router.get("/",protectRoute,authorizeRoles("admin"),getAllBreedProfiles);
 
 
 

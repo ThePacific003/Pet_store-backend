@@ -5,6 +5,11 @@ import User from "../Models/user.model.js";
 export const applyForAdoption=async(req,res)=>{
     try{    
          const { petId, message } = req.body;
+        
+
+                console.log(petId);
+                
+             
         // Ensure only customers can apply
     if (!req.user || req.user.role !== "customer") {
       return res.status(403).json({ message: "Only customers can apply for adoption" });
@@ -12,8 +17,12 @@ export const applyForAdoption=async(req,res)=>{
 
     //check if pet exists
          const pet = await Pet.findById(petId);
+         
     if (!pet) {
       return res.status(404).json({ message: "Pet not found" });
+    }
+    if(pet.listingType!=="adoption"){
+        return res.status(400).json({message:"This pet is not for adoption"})
     }
 
 
@@ -32,10 +41,9 @@ export const applyForAdoption=async(req,res)=>{
 
     //check if already applied
     const alreadyRequested=await Adoption.findOne({
-        pet:petId,
-        adopter:req.user._id,
+        "pet.id":petId,
+        "adopter.id":req.user._id,
     });
-
     if(alreadyRequested){
         return res.status(400).json({message:"You have already applied for this pet"})
     }
@@ -48,10 +56,12 @@ export const applyForAdoption=async(req,res)=>{
         adopter:{
             id:req.user._id,
             name:req.user.fullname,
+            email: req.user.email,
         },
         provider:{
             id:providerId,
             name:providerDetail.fullname,
+            email: providerDetail.email,
         },
         message,
     });
@@ -61,31 +71,31 @@ export const applyForAdoption=async(req,res)=>{
 
 
     }catch(error){
+      if (error.code === 11000) {
+        return res.status(400).json({ message: "You have already applied for this pet" });
+    }
         console.error("Adoption error:",error.message)
         res.status(500).json({message:"Server error while applying for adoption"})
     }
 }
 
-export const getMyAdoptionRequest=async(req,res)=>{
-    try{
-        //ensure user is logged in and is a customer
-        if(!req.user || req.user.role!=="customer"){
-            return res.status(400).json({message:"Access denied:Customers only"})
-        }
-        const customerId=req.user.id
-
-        //find all adoption request made by current customer
-        const myRequest=await Adoption.find({"adopter.id":customerId}).
-        populate("pet","breed age gendercategory imageUrl"). //populate selected pet details
-        sort({createdAt:-1}); //most recent first
-
-        res.status(200).json(myRequest)
+export const getMyAdoptionRequest = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== "customer") {
+      return res.status(400).json({ message: "Access denied: Customers only" });
     }
-    catch(error){
-        console.error("Error fetching adoption requests:",error.message);
-        res.status(500).json({message:"Server error while retrieving your adoption request"})
-    }
-}
+
+    const myRequests = await Adoption.find({ "adopter.id": req.user._id })
+      .populate("pet", "breed age gender category imageUrl") // works now
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(myRequests);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error while retrieving your adoption request" });
+  }
+};
+
 
 export const getAdoptionRequestForProvider = async (req, res) => {
   try {
@@ -144,7 +154,7 @@ export const updateAdoptionStatus=async(req,res)=>{
         //delete pet from pet collection
         await Pet.findByIdAndDelete(adoption.pet.id)
 
-        return res.status(200).json({ message: "Adoption approved and pet removed from listing" });
+        return res.status(200).json(adoption);
        }
 
        if(newStatus.toLowerCase()==="rejected" && currentStatus==="pending"){
@@ -156,12 +166,17 @@ export const updateAdoptionStatus=async(req,res)=>{
         setTimeout(async()=>{
             await Adoption.findByIdAndDelete(id);
             
-        },2*24*60*60*1000)
+        },2*24*60*60*1000);
+        return res.status(200).json(adoption);
     }
     if(newStatus==="delivered" && currentStatus==="approved"){
+      const deliveredAdoption = adoption.toObject();
         // Delete the adoption record
       await Adoption.findByIdAndDelete(id);
-      return res.status(200).json({ message: "Adoption marked as delivered and request removed" });
+      return res.status(200).json({
+        ...deliveredAdoption,
+        adoptionStatus: "delivered",
+      });
     }
 return res.status(400).json({ message: `Cannot update status from ${currentStatus} to ${newStatus}` });
     }
@@ -227,48 +242,47 @@ export const getAllAdoptionRequest=async(req,res)=>{
     }
 }
 
-export const deleteAdoptionRequestByAdmin=async(req,res)=>{
-    try{
-        const {id}=req.params
+export const deleteAdoptionRequestByPp = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-        //admin access check
-        if(!req.user && req.user.role!=="admin"){
-            return res.status(403).json({message:"Access denied!Admins only"})
-        }
+    if (!req.user || req.user.role !== "petProvider") {
+      return res.status(403).json({ message: "Access denied! Pet Providers only." });
+    }
 
-        const adoption=await Adoption.findById(id)
+    const adoption = await Adoption.findById(id);
+    if (!adoption) {
+      return res.status(404).json({ message: "Adoption request not found." });
+    }
 
-        if(!adoption){
-            return res.status(404).json({message:"Adoption request not found"})
-        }
+    if (adoption.provider.id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "You can only delete requests related to your own pets." });
+    }
 
-        const now=new Date()
-        const createdAt=new Date(adoption.createdAt)
-
-
-        //condtion 1: pending for more than 10 days
-        if(adoption.adoptionStatus==="pending" && now-createdAt>10*24*60*60*1000){
-            await Adoption.findByIdAndDelete(id);
-      return res.status(200).json({ message: "Pending request deleted after 10 days." });
-        }
-        // Condition 2: Approved but not delivered after 15 days
     if (
-      adoption.adoptionStatus === "approved" &&
-      now - createdAt > 15 * 24 * 60 * 60 * 1000
+      adoption.adoptionStatus === "delivered" ||
+      adoption.adoptionStatus === "rejected"
     ) {
       await Adoption.findByIdAndDelete(id);
-      return res.status(200).json({ message: "Approved request deleted after 15 days without delivery." });
+      return res.status(200).json({ message: `Adoption request (${adoption.adoptionStatus}) deleted successfully.` });
     }
 
-    // If none of the conditions match
     return res.status(400).json({
-      message:
-        "Adoption request cannot be deleted. It doesn't meet the required conditions.",
+      message: "Only delivered or rejected adoption requests can be deleted.",
     });
 
-    }
-    catch(error){
-        console.error("Error deleting adoption request:",error.message)
-        res.status(500).json({message:"Server error while deleting adoption request"})
-    }
-}
+  } catch (error) {
+    console.error("Error deleting adoption request:", error.message);
+    res.status(500).json({ message: "Server error while deleting adoption request." });
+  }
+};
+
+export const getAdoptablePets = async (req, res) => {
+  try {
+    const pets = await Pet.find({ listingType: "adoption" });
+    res.status(200).json(pets);
+  } catch (err) {
+    console.error("Error fetching adoptable pets:", err.message);
+    res.status(500).json({ message: "Failed to fetch adoptable pets" });
+  }
+};

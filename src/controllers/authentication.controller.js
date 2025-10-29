@@ -66,12 +66,13 @@ export const login = async (req, res) => {
         res.status(200).json({
             _id: user._id,
             email: user.email,
-            password: user.password
+            role:user.role,
+            fullname:user.fullname
         })
 
     } catch (error) {
         console.log("Error loggingin:", error.message);
-        res.status(500).json({ upload });
+        return res.status(500).json({ message: "Server error, please try again" });
 
     }
 }
@@ -102,3 +103,59 @@ export const logout = async (req, res) => {
 
     }
 }
+
+
+export const upgradeToPetProvider = async (req, res) => {
+    try {
+        const userId = req.user._id; // Assuming auth middleware
+        const user = await User.findById(userId);
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        user.role = "petProvider";
+        console.log(user);
+        await user.save();
+
+         res.status(200).json({
+      _id: user._id,
+      fullname: user.fullname,
+      email: user.email,
+      role: user.role,
+      profilePic: user.profilePic
+    });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error });
+    }
+};
+
+export const downgradeProvider = async (req, res) => {
+  try {
+    // check if user is logged in
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // only providers can downgrade
+    if (req.user.role !== "petProvider") {
+      return res.status(403).json({ message: "Only providers can downgrade to customer" });
+    }
+
+    // update role
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { role: "customer" },
+      { new: true }
+    ).select("-password");
+
+   res.status(200).json({
+      _id: updatedUser._id,
+      fullname: updatedUser.fullname,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      profilePic: updatedUser.profilePic
+    });
+  } catch (error) {
+    console.error("Downgrade failed:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

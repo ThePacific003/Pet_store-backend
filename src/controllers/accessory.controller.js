@@ -11,7 +11,7 @@ export const createAccessory=async (req,res)=>{
 
     //basic validation 
 
-    if(!name||!price||!category||!description||!imageUrl||!inStock){
+    if(!name||!price||!category||!description||!inStock){
         return res.status(400).json({message:"All required fields must be provided"})
     }
 
@@ -25,13 +25,16 @@ export const createAccessory=async (req,res)=>{
             inStock,
             quantityInStock
         })
+        if(accessory.quantityInStock<=0){
+          accessory.inStock=false;
+        }
 
-        const savedAccessory=await accessory.save();
-        res.status(200).json(savedAccessory)
+        const savedAccessory=await accessory.save();        
+        return res.status(200).json(savedAccessory)
     }
     catch(error){
         console.log("Error creating accessory:",error.message);
-        res.status(500).json({message:"Internal server error"})
+        return res.status(500).json({message:"Internal server error"})
         
     }
 }
@@ -125,10 +128,9 @@ export const restockAccessory = async (req, res) => {
     // 4. Save changes
     const updatedAccessory = await accessory.save();
 
-    res.status(200).json({
-      message: "Accessory restocked successfully",
+    res.status(200).json(
       updatedAccessory
-    });
+    );
   } catch (error) {
     console.error("Error restocking accessory:", error.message);
     res.status(500).json({ message: "Server error while restocking" });

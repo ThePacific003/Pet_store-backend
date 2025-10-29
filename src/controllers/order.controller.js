@@ -5,7 +5,8 @@ import User from '../Models/user.model.js';
 
 export const createOrder=async (req,res)=>{
     const {orderItems,shippingAddress,paymentMethod}=req.body
-
+    
+        
     try{
     if(!orderItems|| orderItems.length===0){
         return res.status(400).json({message:"No order items provided"})
@@ -21,14 +22,16 @@ export const createOrder=async (req,res)=>{
             const pet=await Pet.findById(item);
 
             if(!pet || pet.availability===false|| pet.quantityInStock<quantity){
-                return res.status(400).json({message:`Pet wiht id ${item} is not available or out of stock`})
+                return res.status(400).json({message:`Pet with id ${item} is not available or out of stock`})
             }
 
             //deduct stock
-            // pet.quantityInStock-=quantity
-            if(pet.quantityInStock<0){
+            if(paymentMethod==="CashOnDelivery"){
+            pet.quantityInStock-=quantity
+            if(pet.quantityInStock<=0){
                 pet.availability=false
             }
+        }
             await pet.save()
 
             validatedItems.push({
@@ -47,12 +50,14 @@ export const createOrder=async (req,res)=>{
             }
 
             //deduct stock
-            // accessory.quantityInStock-=quantity
-            if(accessory.quantityInStock<0){
+            if(paymentMethod==="CashOnDelivery"){
+            accessory.quantityInStock-=quantity
+            if(accessory.quantityInStock<=0){
                 accessory.inStock=false;
             }
-
-            await accessory.save();
+        }
+        await accessory.save();
+            // await accessory.save();
 
             validatedItems.push({
                 itemType,
@@ -77,7 +82,7 @@ export const createOrder=async (req,res)=>{
         orderItems:validatedItems,
         shippingAddress,
         paymentMethod,
-        orderStatus:'processing',
+        paymentStatus:paymentMethod==="esewa"?"Paid":"Pending",
         totalAmount,
     })
 
@@ -95,7 +100,7 @@ export const getAllOrder=async(req,res)=>{
         if(!req.user || req.user.role!=="admin"){
             return res.status(400).json({message:"Access denied! Admins only allowed"})
         }
-        const {orderStatus, startDate, endDate}=req.body;
+        const {orderStatus, startDate, endDate}=req.query;
 
         let filter={}
         // Validate against allowed statuses
@@ -213,7 +218,7 @@ export const updateOrderStatus=async(req,res)=>{
         }
 
         //Validate new order status
-        const validStatuses=["processing","pending","verified","shipped","delivered","cancelled"];
+        const validStatuses=["processing","verified","shipped","delivered","cancelled"];
 
         if(!validStatuses.includes(orderStatus.toLowerCase())){
             res.status(400).json({message:"Invalid order status value"})
@@ -252,7 +257,7 @@ export const updateOrderStatus=async(req,res)=>{
                     }
                 }
             }
-            await deductStockForOrder(order)
+            // await deductStockForOrder(order)
         }
         
         order.orderStatus=orderStatus.toLowerCase()
@@ -286,13 +291,38 @@ export const cancelMyOrder=async(req,res)=>{
         }
 
         //allow cancellation only if order status is processing
-        if(order.orderStatus!=="Processing"){
+        if(order.orderStatus!=="processing"){
             return res.status(400).json({message:"Order cannot be cancelled as it is already verified and processed for further steps"})
+        }
+
+        //restore stock for each ordered items
+
+        for(const a of order.orderItems){
+            const {itemType,item, quantity}=a;
+
+            if(itemType==="Pet"){
+                const pet=await Pet.findById(item)
+                if(pet){
+                    pet.quantityInStock=pet.quantityInStock+quantity;
+                    await pet.save();
+                }
+            }
+            else if (itemType === "Accessory") {
+        const accessory = await Accessory.findById(item);
+        if (accessory) {
+          accessory.stock = accessory.stock  + quantity;
+          await accessory.save();
+        }
+      }
         }
 
         //update status to cancelled
 
         order.orderStatus="cancelled";
+        order.cancelledAt = new Date();
+
+        
+
         await order.save();
 
         res.status(200).json(order)
@@ -373,29 +403,29 @@ export const updateStockAfterOrder=async(req,res)=>{
     }
 }
 
-const deductStockForOrder=async(order)=>{
-    for(const c of order.orderItems){
-        const {itemType,item,quantity}=c;
+// const deductStockForOrder=async(order)=>{
+//     for(const c of order.orderItems){
+//         const {itemType,item,quantity}=c;
 
-        if(itemType==="Pet"){
-            const pet=await Pet.findById(item._id);
-            if(pet && pet.quantityInStock>=quantity){
+//         if(itemType==="Pet"){
+//             const pet=await Pet.findById(item._id);
+//             if(pet && pet.quantityInStock>=quantity){
                 
-                pet.quantityInStock=Math.max(pet.quantityInStock-quantity,0)
-                pet.inStock=pet.quantityInStock>0
-                await pet.save()
-            }
-        }
-        if(itemType==="Accessory"){
-            const accessory=await Accessory.findById(item._id)
-            if(accessory && accessory.quantityInStock>quantity){
-                accessory.quantityInStock=Math.max(accessory.quantityInStock-quantity,0)
-                accessory.inStock=accessory.quantityInStock>0
-                await accessory.save()
-            }
-        }
-    }
-}
+//                 pet.quantityInStock=Math.max(pet.quantityInStock-quantity,0)
+//                 pet.inStock=pet.quantityInStock>0
+//                 await pet.save()
+//             }
+//         }
+//         if(itemType==="Accessory"){
+//             const accessory=await Accessory.findById(item._id)
+//             if(accessory && accessory.quantityInStock>quantity){
+//                 accessory.quantityInStock=Math.max(accessory.quantityInStock-quantity,0)
+//                 accessory.inStock=accessory.quantityInStock>0
+//                 await accessory.save()
+//             }
+//         }
+//     }
+// }
 
 export const generateOrderInvoice = async (req, res) => {
   try {

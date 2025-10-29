@@ -68,15 +68,31 @@ const orderSchema=mongoose.Schema(
         },
         orderStatus:{
             type:String,
-            enum:["processing","verified","pending","shipped","delivered","cancelled"],
-            default:"Processing",
+            enum:["processing","verified","shipped","delivered","cancelled"],
+            default:"processing",
         },
+
+        esewa:{
+            transaction_uuid:String,
+            status:{
+                type:String,
+                enum:["initiated","complete","failed"],
+                default:"initiated",
+            },
+            ref_id:String,
+        },
+        cancelledAt: {
+      type: Date,
+      default: null,
+    //   index: { expireAfterSeconds: 60 }, // 10min
+    },
 
     },
     {
         timestamps:true,
     }
 );
+orderSchema.index({ cancelledAt: 1 }, { expireAfterSeconds: 60 });
 
 const Order=mongoose.model("Order",orderSchema)
 export default Order

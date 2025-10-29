@@ -78,25 +78,35 @@ export const updateBreedProfile=async(req,res)=>{
     }
 };
 
+
 export const deleteBreedProfile = async (req, res) => {
   try {
-    // Check admin role
+
+    console.log("🟡 Delete request received for ID:", req.params.id);
     if (!req.user || req.user.role !== "admin") {
       return res.status(403).json({ message: "Access denied: Admins only" });
     }
 
+
+
+    
+    
     const deletedBreed = await BreedProfile.findByIdAndDelete(req.params.id);
 
     if (!deletedBreed) {
       return res.status(404).json({ message: "Breed not found" });
     }
 
-    res.status(200).json({ message: "Breed profile deleted successfully" });
+    return res.status(200).json({
+      message: "Breed profile deleted successfully",
+      deletedBreed,
+    });
   } catch (error) {
-    console.error("Error deleting breed profile:", error.message);
-    res.status(500).json({ message: "Server error while deleting breed" });
+    console.error(" Error deleting breed profile:", error);
+    return res.status(500).json({ message: "Server error while deleting breed" });
   }
 };
+
 
 
 export const recommendBreed = async (req, res) => {
@@ -181,3 +191,17 @@ export const recommendBreed = async (req, res) => {
   }
 };
 
+export const getAllBreedProfiles = async (req, res) => {
+  try {
+    const breeds = await BreedProfile.find().sort({createdAt:-1});
+
+    if (breeds.length === 0) {
+      return res.status(404).json({ message: "No breed profiles found" });
+    }
+
+    res.status(200).json(breeds);
+  } catch (error) {
+    console.error("Error fetching breed profiles:", error.message);
+    return res.status(500).json({ message: "Server error while fetching breed profiles" });
+  }
+};

@@ -21,6 +21,10 @@ const adoptionSchema=mongoose.Schema({
       name: {
         type: String,
         required: true,
+      },
+      email:{
+        type:String,
+        required:true,
       }
     },
     adopter: {
@@ -32,6 +36,10 @@ const adoptionSchema=mongoose.Schema({
       name: {
         type: String,
         required: true,
+      },
+      email:{
+        type:String,
+        required:true,
       }
     },
     adoptionStatus:{
@@ -49,8 +57,12 @@ const adoptionSchema=mongoose.Schema({
     }
 },
 {
-    timestamp:true
+    timestamps:true
 }
+);
+adoptionSchema.index(
+  { "pet.id": 1, "adopter.id": 1 },
+  { unique: true }
 );
 const Adoption=mongoose.model("Adoption",adoptionSchema)
 export default Adoption
