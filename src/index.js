@@ -13,12 +13,13 @@ import productRoutes from "./routes/product.routes.js"
 import paymentRoutes from "./routes/payment.routes.js"
 import chatRoutes from "./routes/chat.routes.js"
 import cors from "cors"
+import { app, server } from './lib/socket.js';
 dotenv.config()
 
 const port = process.env.PORT
 
 
-const app = express();
+// const app = express();
 app.use(express.json());
 app.use(cookieparser());
 
@@ -41,7 +42,7 @@ app.use("/api/products/",productRoutes)
 app.use("/api/payment/",paymentRoutes)
 app.use("/api/message",chatRoutes)
 
-app.listen(port, (req, res) => {
+server.listen(port, (req, res) => {
     console.log(`Server listening on port ${port}`);
     connectDb()
 })

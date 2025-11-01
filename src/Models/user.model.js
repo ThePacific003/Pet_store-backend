@@ -26,10 +26,19 @@ const userSchema = mongoose.Schema(
             type: String,
             default: ""
         },
-        isVerfiedVet:{
+        // isVerfiedVet:{
+        //     type:Boolean,
+        //     default:false
+        // },
+        otp:{
+            type: String
+        },
+        isVerified:{
             type:Boolean,
-            default:false
-        }
+        },
+  otpExpires: {
+   type: Date
+}
     },
     {
         timestamps: true

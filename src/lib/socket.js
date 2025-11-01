@@ -26,22 +26,12 @@ io.on("connection", (socket) => {
     if (userId) userSocketMap[userId] = socket.id
     else console.log("⚠️ No userId in handshake for socket", socket.id)
 
-    io.emit("getOnlineUsers", Object.keys(userSocketMap))
-
-    socket.on("join-chat", (guildId) => {
-        socket.join(guildId)
-        console.log(`User ${socket.id} joined guild ${guildId}`)
-    })
-
-    socket.on("leave-guild-chat", (guildId) => {
-        socket.leave(guildId)
-        console.log(`User ${socket.id} left guild ${guildId}`)
-    })
+    // io.emit("getOnlineUsers", Object.keys(userSocketMap))
 
     socket.on("disconnect", (reason) => {
         console.log("❌ User disconnected:", socket.id, reason)
         if (userId) delete userSocketMap[userId]
-        io.emit("getOnlineUsers", Object.keys(userSocketMap))
+        // io.emit("getOnlineUsers", Object.keys(userSocketMap))
     })
 })
 

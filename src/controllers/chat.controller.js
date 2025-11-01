@@ -3,19 +3,54 @@ import Chat from "../Models/chat.model.js";
 import User from "../Models/user.model.js";
 import { getReceiverSocketId, io } from "../lib/socket.js"
 
+// export const getUsersForSiderbar = async (req, res) => {
+//     try {
+//         if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+//         const loggerInUserId = req.user._id
+
+        
+//         const filteredUsers = await User.find({
+//              _id: { $ne: loggerInUserId },
+//              role:{$nin:["admin","customer"]}
+            
+//              }).select("name email role fullname")
+
+//         res.status(200).json(filteredUsers)
+//     } catch (error) {
+//         console.log("Error getting Users: ", error.message);
+//         res.status(500).json({ message: "Internal server error" })
+
+//     }
+// }
+
 export const getUsersForSiderbar = async (req, res) => {
-    try {
-        if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-        const loggerInUserId = req.user._id
-        const filteredUsers = await User.find({ _id: { $ne: loggerInUserId } }).select("name email role fullname")
+  try {
+    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
 
-        res.status(200).json(filteredUsers)
-    } catch (error) {
-        console.log("Error getting Users: ", error.message);
-        res.status(500).json({ message: "Internal server error" })
+    const loggedInUserId = req.user._id;
+    const userRole = req.user.role;
 
+    // Define exclusion list based on role
+    let excludedRoles = ["admin"]; // Always exclude admin
+
+    if (userRole === "customer") {
+      excludedRoles.push("customer");
+    } else if (userRole === "vet") {
+      excludedRoles.push("vet");
     }
-}
+
+    // Fetch users excluding self and excluded roles
+    const filteredUsers = await User.find({
+      _id: { $ne: loggedInUserId },
+      role: { $nin: excludedRoles },
+    }).select("name email role fullname profilePic");
+
+    res.status(200).json(filteredUsers);
+  } catch (error) {
+    console.error("Error getting Users:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const getMessages = async (req, res) => {
   try {
